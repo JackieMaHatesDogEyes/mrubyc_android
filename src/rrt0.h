@@ -105,8 +105,8 @@ int mrbc_mutex_lock(mrbc_mutex *mutex, mrbc_tcb *tcb);
 int mrbc_mutex_unlock(mrbc_mutex *mutex, mrbc_tcb *tcb);
 int mrbc_mutex_trylock(mrbc_mutex *mutex, mrbc_tcb *tcb);
 void mrbc_cleanup(void);
-void mrbc_init(uint8_t *ptr, unsigned int size);
-void pq(mrbc_tcb *p_tcb);
+void mrbc_init(void *heap_ptr, unsigned int size);
+void pq(const mrbc_tcb *p_tcb);
 void pqall(void);
 
 

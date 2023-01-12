@@ -269,8 +269,8 @@ mrbc_tcb * mrbc_create_task(const void *byte_code, mrbc_tcb *tcb)
 //================================================================
 /*! Start execution of dormant task.
 
-  @param	tcb	Task control block with parameter, or NULL.
-  @retval	int	zero / no error.
+  @param  tcb	Task control block with parameter, or NULL.
+  @retval int	zero / no error.
 */
 int mrbc_start_task(mrbc_tcb *tcb)
 {
@@ -370,6 +370,8 @@ int mrbc_run(void)
 //================================================================
 /*! sleep for a specified number of milliseconds.
 
+  @param  tcb	target task.
+  @param  ms	sleep milliseconds.
 */
 void mrbc_sleep_ms(mrbc_tcb *tcb, uint32_t ms)
 {
@@ -390,6 +392,7 @@ void mrbc_sleep_ms(mrbc_tcb *tcb, uint32_t ms)
 //================================================================
 /*! Relinquish control to other tasks.
 
+  @param  tcb	target task.
 */
 void mrbc_relinquish(mrbc_tcb *tcb)
 {
@@ -401,6 +404,8 @@ void mrbc_relinquish(mrbc_tcb *tcb)
 //================================================================
 /*! change task priority.
 
+  @param  tcb		target task.
+  @param  priority	priority value. between 1 and 255.
 */
 void mrbc_change_priority(mrbc_tcb *tcb, int priority)
 {
@@ -414,6 +419,7 @@ void mrbc_change_priority(mrbc_tcb *tcb, int priority)
 //================================================================
 /*! suspend the task.
 
+  @param  tcb		target task.
 */
 void mrbc_suspend_task(mrbc_tcb *tcb)
 {
@@ -430,6 +436,7 @@ void mrbc_suspend_task(mrbc_tcb *tcb)
 //================================================================
 /*! resume the task (BETA)
 
+  @param  tcb		target task.
 */
 void mrbc_resume_task(mrbc_tcb *tcb)
 {
@@ -451,6 +458,7 @@ void mrbc_resume_task(mrbc_tcb *tcb)
 //================================================================
 /*! mutex initialize
 
+  @param  mutex		pointer to mrbc_mutex or NULL.
 */
 mrbc_mutex * mrbc_mutex_init( mrbc_mutex *mutex )
 {
@@ -469,6 +477,8 @@ mrbc_mutex * mrbc_mutex_init( mrbc_mutex *mutex )
 //================================================================
 /*! mutex lock
 
+  @param  mutex		pointer to mutex.
+  @param  tcb		pointer to TCB.
 */
 int mrbc_mutex_lock( mrbc_mutex *mutex, mrbc_tcb *tcb )
 {
@@ -511,6 +521,8 @@ int mrbc_mutex_lock( mrbc_mutex *mutex, mrbc_tcb *tcb )
 //================================================================
 /*! mutex unlock
 
+  @param  mutex		pointer to mutex.
+  @param  tcb		pointer to TCB.
 */
 int mrbc_mutex_unlock( mrbc_mutex *mutex, mrbc_tcb *tcb )
 {
@@ -559,6 +571,8 @@ int mrbc_mutex_unlock( mrbc_mutex *mutex, mrbc_tcb *tcb )
 //================================================================
 /*! mutex trylock
 
+  @param  mutex		pointer to mutex.
+  @param  tcb		pointer to TCB.
 */
 int mrbc_mutex_trylock( mrbc_mutex *mutex, mrbc_tcb *tcb )
 {
@@ -789,11 +803,13 @@ static void c_vm_tick(mrbc_vm *vm, mrbc_value v[], int argc)
 //================================================================
 /*! initialize
 
+  @param  heap_ptr	heap memory buffer.
+  @param  size		its size.
 */
-void mrbc_init(uint8_t *ptr, unsigned int size)
+void mrbc_init(void *heap_ptr, unsigned int size)
 {
   hal_init();
-  mrbc_init_alloc(ptr, size);
+  mrbc_init_alloc(heap_ptr, size);
   mrbc_init_global();
   mrbc_init_class();
 
@@ -826,9 +842,9 @@ void mrbc_init(uint8_t *ptr, unsigned int size)
 /*! DEBUG print queue
 
  */
-void pq(mrbc_tcb *p_tcb)
+void pq(const mrbc_tcb *p_tcb)
 {
-  mrbc_tcb *p;
+  const mrbc_tcb *p;
 
   p = p_tcb;
   while( p != NULL ) {
