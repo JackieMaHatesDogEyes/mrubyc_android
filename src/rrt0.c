@@ -57,16 +57,16 @@ static volatile uint32_t tick_;
 /***** Functions ************************************************************/
 
 //================================================================
-/*! Insert to task queue
+/*! Insert task(TCB) to task queue
 
-  @param        Pointer to target TCB
+  @param  p_tcb	Pointer to target TCB
 
   Put the task (TCB) into a queue by each state.
   TCB must be free. (must not be in another queue)
   The queue is sorted in priority_preemption order.
   If the same priority_preemption value is in the TCB and queue,
   it will be inserted at the end of the same value in queue.
- */
+*/
 static void q_insert_task(mrbc_tcb *p_tcb)
 {
   mrbc_tcb **pp_q;
@@ -87,31 +87,27 @@ static void q_insert_task(mrbc_tcb *p_tcb)
      (p_tcb->priority_preemption < (*pp_q)->priority_preemption)) {
     p_tcb->next = *pp_q;
     *pp_q       = p_tcb;
-    assert(p_tcb->next != p_tcb);
     return;
   }
 
   // find insert point in sorted linked list.
   mrbc_tcb *p = *pp_q;
-  while( 1 ) {
-    if((p->next == NULL) ||
-       (p_tcb->priority_preemption < p->next->priority_preemption)) {
-      p_tcb->next = p->next;
-      p->next     = p_tcb;
-      assert(p->next != p);
-      return;
-    }
-
+  while( p->next != NULL ) {
+    if( p_tcb->priority_preemption < p->next->priority_preemption ) break;
     p = p->next;
   }
+
+  // insert tcb to queue.
+  p_tcb->next = p->next;
+  p->next     = p_tcb;
 }
 
 
 //================================================================
-/*! Delete from task queue
+/*! Delete task(TCB) from task queue
 
-  @param        Pointer to target TCB
- */
+  @param  p_tcb	Pointer to target TCB
+*/
 static void q_delete_task(mrbc_tcb *p_tcb)
 {
   mrbc_tcb **pp_q;
@@ -126,8 +122,8 @@ static void q_delete_task(mrbc_tcb *p_tcb)
     assert(!"Wrong task state.");
     return;
   }
+  assert( *pp_q );
 
-  if( *pp_q == NULL ) return;
   if( *pp_q == p_tcb ) {
     *pp_q       = p_tcb->next;
     p_tcb->next = NULL;
@@ -144,6 +140,8 @@ static void q_delete_task(mrbc_tcb *p_tcb)
 
     p = p->next;
   }
+
+  assert(!"Not found target task in queue.");
 }
 
 
@@ -395,7 +393,7 @@ void mrbc_sleep_ms(mrbc_tcb *tcb, uint32_t ms)
 */
 void mrbc_relinquish(mrbc_tcb *tcb)
 {
-  tcb->timeslice           = 0;
+  tcb->timeslice          = 0;
   tcb->vm.flag_preemption = 1;
 }
 
@@ -406,10 +404,10 @@ void mrbc_relinquish(mrbc_tcb *tcb)
 */
 void mrbc_change_priority(mrbc_tcb *tcb, int priority)
 {
-  tcb->priority            = (uint8_t)priority;
-  tcb->priority_preemption = (uint8_t)priority;
+  tcb->priority            = priority;
+  tcb->priority_preemption = priority;
   tcb->timeslice           = 0;
-  tcb->vm.flag_preemption = 1;
+  tcb->vm.flag_preemption  = 1;
 }
 
 
