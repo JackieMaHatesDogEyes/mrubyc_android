@@ -76,7 +76,6 @@ typedef struct RTcb {
 } mrbc_tcb;
 
 
-
 //================================================
 /*!@brief
   Mutex
@@ -92,8 +91,6 @@ typedef struct RMutex {
 /***** Global variables *****************************************************/
 /***** Function prototypes **************************************************/
 void mrbc_tick(void);
-void mrbc_init(uint8_t *ptr, unsigned int size);
-void mrbc_cleanup(void);
 mrbc_tcb *mrbc_tcb_new(int regs_size, enum MrbcTaskState task_state, int priority);
 mrbc_tcb *mrbc_create_task(const void *byte_code, mrbc_tcb *tcb);
 int mrbc_start_task(mrbc_tcb *tcb);
@@ -107,6 +104,8 @@ mrbc_mutex *mrbc_mutex_init(mrbc_mutex *mutex);
 int mrbc_mutex_lock(mrbc_mutex *mutex, mrbc_tcb *tcb);
 int mrbc_mutex_unlock(mrbc_mutex *mutex, mrbc_tcb *tcb);
 int mrbc_mutex_trylock(mrbc_mutex *mutex, mrbc_tcb *tcb);
+void mrbc_cleanup(void);
+void mrbc_init(uint8_t *ptr, unsigned int size);
 void pq(mrbc_tcb *p_tcb);
 void pqall(void);
 
