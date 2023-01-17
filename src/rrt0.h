@@ -47,6 +47,10 @@ enum MrbcTaskReason {
 static const int MRBC_TASK_DEFAULT_PRIORITY = 128;
 static const int MRBC_TASK_DEFAULT_STATE = TASKSTATE_READY;
 
+#if !defined(MRBC_TASK_NAME_LEN)
+#define MRBC_TASK_NAME_LEN 15
+#endif
+
 
 /***** Macros ***************************************************************/
 /***** Typedefs *************************************************************/
@@ -61,18 +65,21 @@ typedef struct RTcb {
 #if defined(MRBC_DEBUG)
   uint8_t type[4];		//!< set "TCB\0" for debug.
 #endif
-  struct RTcb *next;
-  uint8_t priority;
-  uint8_t priority_preemption;
-  volatile uint8_t timeslice;
-  uint8_t state;	//!< enum MrbcTaskState
-  uint8_t reason;	//!< SLEEP, MUTEX
+  struct RTcb *next;		//!< daisy chain in task queue.
+  char name[MRBC_TASK_NAME_LEN+1]; //!< task name (optional)
+  uint8_t priority;		//!< task priority. initial value.
+  uint8_t priority_preemption;	//!< task priority. effective value.
+  volatile uint8_t timeslice;	//!< time slice counter.
+  enum MrbcTaskState state : 8;	//!< task state.
+  enum MrbcTaskReason reason : 8; //!< sub state.
 
   union {
-    uint32_t wakeup_tick;
+    uint32_t wakeup_tick;	//!< wakeup time for sleep state.
     struct RMutex *mutex;
   };
+
   struct VM vm;
+
 } mrbc_tcb;
 
 
@@ -111,7 +118,6 @@ void pqall(void);
 
 
 /***** Inline functions *****************************************************/
-
 
 #ifdef __cplusplus
 }

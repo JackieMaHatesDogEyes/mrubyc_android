@@ -29,6 +29,7 @@
 #include "symbol.h"
 #include "vm.h"
 #include "console.h"
+#include "c_string.h"
 #include "rrt0.h"
 #include "hal_selector.h"
 
@@ -267,9 +268,48 @@ mrbc_tcb * mrbc_create_task(const void *byte_code, mrbc_tcb *tcb)
 
 
 //================================================================
+/*! set the task name.
+
+  @param  tcb	target task.
+  @param  name	task name
+*/
+void mrbc_set_task_name(mrbc_tcb *tcb, const char *name)
+{
+  strncpy( tcb->name, name, MRBC_TASK_NAME_LEN );
+}
+
+
+//================================================================
+/*! find task by name
+
+  @param  name		task name
+  @return pointer to mrbc_tcb or NULL
+*/
+mrbc_tcb * mrbc_find_task(const char *name)
+{
+  mrbc_tcb *tcb;
+
+  for( tcb = q_ready_; tcb; tcb = tcb->next ) {
+    if( strcmp( tcb->name, name ) == 0 ) return tcb;
+  }
+  for( tcb = q_waiting_; tcb; tcb = tcb->next ) {
+    if( strcmp( tcb->name, name ) == 0 ) return tcb;
+  }
+  for( tcb = q_suspended_; tcb; tcb = tcb->next ) {
+    if( strcmp( tcb->name, name ) == 0 ) return tcb;
+  }
+  for( tcb = q_dormant_; tcb; tcb = tcb->next ) {
+    if( strcmp( tcb->name, name ) == 0 ) return tcb;
+  }
+
+  return 0;
+}
+
+
+//================================================================
 /*! Start execution of dormant task.
 
-  @param  tcb	Task control block with parameter, or NULL.
+  @param  tcb	target task.
   @retval int	zero / no error.
 */
 int mrbc_start_task(mrbc_tcb *tcb)
@@ -800,6 +840,80 @@ static void c_vm_tick(mrbc_vm *vm, mrbc_value v[], int argc)
 }
 
 
+//!====== TODO: working ========
+static void c_task_p(mrbc_vm *vm, mrbc_value v[], int argc)
+{
+  //mrbc_tcb *tcb = (v[0].tt == MRBC_TT_CLASS) ? VM2TCB(vm) : v[0].handle;
+  mrbc_tcb *tcb = VM2TCB(vm);
+
+  mrbc_printf("Task:$%p=\"%s\"", tcb, tcb->name );
+  mrbc_printf("  prio:%d/%d", tcb->priority, tcb->priority_preemption );
+  mrbc_printf("  tslc:%d  stat:%d  resn:%d\n",
+	      tcb->timeslice, tcb->state, tcb->reason );
+}
+
+//================================================================
+/*! (method) name setter.
+*/
+static void c_task_name_eq(mrbc_vm *vm, mrbc_value v[], int argc)
+{
+  mrbc_set_task_name( VM2TCB(vm), mrbc_string_cstr(&v[1]) );
+}
+
+
+//================================================================
+/*! (method) name getter
+*/
+static void c_task_name(mrbc_vm *vm, mrbc_value v[], int argc)
+{
+  mrbc_value ret = mrbc_string_new_cstr( vm, VM2TCB(vm)->name );
+  SET_RETURN(ret);
+}
+
+
+//================================================================
+/*! (method) task getter
+*/
+static void c_task_get(mrbc_vm *vm, mrbc_value v[], int argc)
+{
+  if( v[0].tt != MRBC_TT_CLASS ) return;
+
+  // as class method.
+  mrbc_value ret = mrbc_nil_value();
+
+  if( argc == 0 ) {
+    // in case of Task.get()
+    ret = mrbc_instance_new(vm, v->cls, sizeof(mrbc_tcb *));
+    *(mrbc_tcb **)ret.instance->data = VM2TCB(vm);
+
+  } else if( v[1].tt == MRBC_TT_STRING ) {
+    // in case of Task.get("name")
+    mrbc_tcb *tcb = mrbc_find_task( mrbc_string_cstr(&v[1]) );
+    if( tcb ) {
+      ret = mrbc_instance_new(vm, v->cls, sizeof(mrbc_tcb *));
+      *(mrbc_tcb **)ret.instance->data = tcb;
+    }
+  }
+
+  SET_RETURN(ret);
+}
+
+
+
+
+//================================================================
+/*! (method) change priority
+*/
+static void c_task_change_priority(mrbc_vm *vm, mrbc_value v[], int argc)
+{
+  //mrbc_tcb *tcb = (v[0].tt == MRBC_TT_CLASS) ? VM2TCB(vm) : v[0].handle;
+  mrbc_tcb *tcb = VM2TCB(vm);
+
+  mrbc_change_priority(tcb, mrbc_integer(v[1]));
+}
+
+
+
 //================================================================
 /*! initialize
 
@@ -813,13 +927,24 @@ void mrbc_init(void *heap_ptr, unsigned int size)
   mrbc_init_global();
   mrbc_init_class();
 
-  mrbc_define_method(0, mrbc_class_object, "sleep",           c_sleep);
-  mrbc_define_method(0, mrbc_class_object, "sleep_ms",        c_sleep_ms);
-  mrbc_define_method(0, mrbc_class_object, "relinquish",      c_relinquish);
+  mrbc_define_method(0, mrbc_class_object, "sleep", c_sleep);
+  mrbc_define_method(0, mrbc_class_object, "sleep_ms", c_sleep_ms);
+  mrbc_define_method(0, mrbc_class_object, "relinquish", c_relinquish);
   mrbc_define_method(0, mrbc_class_object, "change_priority", c_change_priority);
-  mrbc_define_method(0, mrbc_class_object, "suspend_task",    c_suspend_task);
-  mrbc_define_method(0, mrbc_class_object, "resume_task",     c_resume_task);
-  mrbc_define_method(0, mrbc_class_object, "get_tcb",	      c_get_tcb);
+  mrbc_define_method(0, mrbc_class_object, "suspend_task", c_suspend_task);
+  mrbc_define_method(0, mrbc_class_object, "resume_task", c_resume_task);
+  mrbc_define_method(0, mrbc_class_object, "get_tcb", c_get_tcb);
+
+  mrbc_class *c_task;
+  c_task = mrbc_define_class(0, "Task", 0);
+  mrbc_define_method(0, c_task, "p", c_task_p);  // Temporary
+  mrbc_define_method(0, c_task, "name=", c_task_name_eq);
+  mrbc_define_method(0, c_task, "name", c_task_name);
+  mrbc_define_method(0, c_task, "get", c_task_get);
+
+  mrbc_define_method(0, c_task, "change_priority", c_task_change_priority);
+//  mrbc_define_method(0, c_task, "", c_task_);
+
 
   mrbc_class *c_mutex;
   c_mutex = mrbc_define_class(0, "Mutex", mrbc_class_object);
