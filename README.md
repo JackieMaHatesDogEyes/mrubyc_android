@@ -1,8 +1,6 @@
-# mruby/c
+# mruby/c (android port)
 
 [![Ruby](https://github.com/mrubyc/mrubyc/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/mrubyc/mrubyc/actions/workflows/c-cpp.yml)
-
-[![Join the chat at https://gitter.im/mrubyc/mrubyc](https://badges.gitter.im/mrubyc/mrubyc.svg)](https://gitter.im/mrubyc/mrubyc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 mruby/c is another implementation of mruby.
 
@@ -22,19 +20,14 @@ mruby/c is another implementation of mruby.
 
 [How to compile?](doc/compile.md)
 
-[How to run tests?](doc/test.md)
 
 
 ## Developer team
 
 - [Shimane IT Open-Innovation Center](http://www.s-itoc.jp/)
 - [Kyushu Institute of Technology](http://www.kyutech.ac.jp/)
+- Forked by [JackieMaHatesDogEyes](https://github.com/JackieMaHatesDogEyes)
 
 ## License
 
 mruby/c is released under the Revised BSD License(aka 3-clause license).
-
-## Related work
-
-- Device classes for mruby/c (https://github.com/mrubyc/dev)
-- Some sample programs that mainly control sensors. (https://github.com/mrubyc/devkit02/tree/main/samples)
