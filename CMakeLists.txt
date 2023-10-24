@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22.1)
 project("mrubyc")
 
 
-add_library(${CMAKE_PROJECT_NAME}
+add_library(${CMAKE_PROJECT_NAME} SHARED
     # mruby files
     src/alloc.c
     src/c_array.c
